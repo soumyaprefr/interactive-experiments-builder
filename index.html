@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Experimentation Documentation Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application is designed as a multi-step wizard using a left-hand navigation sidebar and a main content area. This structure breaks down the complex process of experiment documentation into manageable, thematic sections (Overview, Hypothesis, Design, etc.). Users navigate sequentially, focusing on one aspect at a time. This guided flow reduces cognitive load and ensures all necessary components of the plan are considered. Key interactions include dynamic form inputs, sliders for statistical parameters, and a real-time results chart, transforming a static template into an active tool for planning. -->
+    <!-- Visualization & Content Choices: Report Info (Experiment Parameters & Results) -> Goal (Inform, Input, Compare) -> Viz/Presentation (Interactive Form with Sliders, Toggles, Dynamic Inputs; Bar Chart for Results) -> Interaction (User fills form, adjusts sliders, adds variants, sees chart update in real-time) -> Justification (Interactive inputs are more engaging and less error-prone than static fields. The bar chart provides immediate visual feedback on the potential impact of the experiment, making the results easier to understand than raw numbers.) -> Library/Method (HTML/Tailwind for structure, Chart.js for visualization). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFBF8; }
+        .nav-link { transition: all 0.2s ease-in-out; }
+        .nav-link.active { background-color: #4A5568; color: white; }
+        .nav-link:not(.active):hover { background-color: #E2E8F0; }
+        .form-input, .form-textarea, .form-select {
+            border-color: #CBD5E0;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #4A5568;
+            box-shadow: 0 0 0 2px #E2E8F0;
+        }
+        .toggle-btn { transition: all 0.2s ease-in-out; }
+        .toggle-btn.active { background-color: #2D3748; color: white; }
+        .toggle-btn:not(.active) { background-color: #E2E8F0; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .chart-container { height: 300px; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <aside class="w-full md:w-64 bg-gray-100 border-r border-gray-200 p-4 md:p-6">
+            <img src="/_api/file/uploaded:Prefr - Coloured - Logo Mark (1).jpg-f126d090-c6f5-42bc-9969-d32f8fbc8922" alt="Prefr Logo" class="mb-4 mx-auto md:mx-0 w-[100px] h-[100px]" onerror="this.onerror=null;this.src='https://placehold.co/100x100/DDDDDD/000000?text=Prefr+Logo';">
+            <h1 class="text-xl font-bold text-gray-800 mb-6">Experiment Builder</h1>
+            <nav id="main-nav" class="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible pb-4 md:pb-0">
+                <a href="#overview" class="nav-link active text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">1. Overview</a>
+                <a href="#hypothesis" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">2. Hypothesis</a>
+                <a href="#design" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">3. Design</a>
+                <a href="#execution" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">4. Execution</a>
+                <a href="#analysis" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">5. Analysis</a>
+                <a href="#results" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">6. Results</a>
+                <a href="#export" class="nav-link text-left font-medium rounded-md px-4 py-2 mb-1 mr-1 md:mr-0 whitespace-nowrap">7. Export</a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10">
+            <div id="overview" class="page-content">
+                <h2 class="text-3xl font-bold mb-2">Experiment Overview</h2>
+                <p class="text-gray-600 mb-8">Start by defining the high-level details of your experiment. This section sets the stage for your entire plan, clarifying the purpose and scope of your test.</p>
+                <div class="space-y-6">
+                    <div>
+                        <label for="exp-title" class="block text-sm font-medium text-gray-700 mb-1">Experiment Title</label>
+                        <input type="text" id="exp-title" class="form-input w-full p-2 border rounded-md" placeholder="e.g., Email Subject Line A/B Test">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="exp-date" class="block text-sm font-medium text-gray-700 mb-1">Date Initiated</label>
+                            <input type="date" id="exp-date" class="form-input w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="exp-owner" class="block text-sm font-medium text-gray-700 mb-1">Experiment Owner</label>
+                            <input type="text" id="exp-owner" class="form-input w-full p-2 border rounded-md" placeholder="Your Name / Team">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="exp-goal" class="block text-sm font-medium text-gray-700 mb-1">Goal/Objective</label>
+                        <input type="text" id="exp-goal" class="form-input w-full p-2 border rounded-md" placeholder="e.g., Increase newsletter sign-up rate by 10%">
+                    </div>
+                     <div>
+                        <label for="exp-metric" class="block text-sm font-medium text-gray-700 mb-1">Key Metric(s)</label>
+                        <input type="text" id="exp-metric" class="form-input w-full p-2 border rounded-md" placeholder="e.g., Click-through Rate (CTR)">
+                    </div>
+                </div>
+            </div>
+
+            <div id="hypothesis" class="page-content hidden">
+                <h2 class="text-3xl font-bold mb-2">Hypothesis Formulation</h2>
+                <p class="text-gray-600 mb-8">Clearly articulate what you're trying to prove. A strong hypothesis is testable, precise, and provides the foundation for your experiment's design and analysis.</p>
+                <div class="space-y-6">
+                    <div>
+                        <label for="hypo-question" class="block text-sm font-medium text-gray-700 mb-1">Research Question</label>
+                        <p class="text-xs text-gray-500 mb-2">What specific question are you trying to answer with this experiment?</p>
+                        <textarea id="hypo-question" rows="3" class="form-textarea w-full p-2 border rounded-md" placeholder="e.g., Does a personalized email subject line lead to a higher open rate than a generic one?"></textarea>
+                    </div>
+                    <div>
+                        <label for="hypo-alt" class="block text-sm font-medium text-gray-700 mb-1">Alternative Hypothesis ($H_1$)</label>
+                        <p class="text-xs text-gray-500 mb-2">This is the statement you are trying to prove. It suggests there is a significant difference or effect.</p>
+                        <textarea id="hypo-alt" rows="3" class="form-textarea w-full p-2 border rounded-md" placeholder="e.g., Personalized email subject lines will lead to a statistically significant increase in email open rates."></textarea>
+                    </div>
+                    <div>
+                        <label for="hypo-null" class="block text-sm font-medium text-gray-700 mb-1">Null Hypothesis ($H_0$)</label>
+                        <p class="text-xs text-gray-500 mb-2">This is the statement you are trying to disprove. It suggests there is no significant difference or effect.</p>
+                        <textarea id="hypo-null" rows="3" class="form-textarea w-full p-2 border rounded-md" placeholder="e.g., There is no statistically significant difference in email open rates between personalized and generic subject lines."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="design" class="page-content hidden">
+                <h2 class="text-3xl font-bold mb-2">Experiment Design</h2>
+                <p class="text-gray-600 mb-8">Define the statistical framework for your test. This section ensures your experiment is robust, reliable, and capable of detecting meaningful changes.</p>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6 bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold border-b pb-2">Statistical Parameters</h3>
+                        <div>
+                            <label for="confidence-level" class="block text-sm font-medium text-gray-700">Confidence Level: <span id="confidence-val" class="font-bold">95%</span></label>
+                            <p class="text-xs text-gray-500 mb-2">The probability of avoiding a false positive (Type I error). Typically 95% or 99%.</p>
+                            <input type="range" id="confidence-level" min="90" max="99" value="95" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label for="statistical-power" class="block text-sm font-medium text-gray-700">Statistical Power: <span id="power-val" class="font-bold">80%</span></label>
+                            <p class="text-xs text-gray-500 mb-2">The probability of detecting a true effect and avoiding a false negative (Type II error).</p>
+                            <input type="range" id="statistical-power" min="80" max="99" value="80" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Test Type</label>
+                             <p class="text-xs text-gray-500 mb-2">Choose 'Two-Way' unless you are certain the effect can only go in one direction.</p>
+                            <div class="flex rounded-md mt-2" id="test-type-toggle">
+                                <button data-value="Two-Way" class="toggle-btn active flex-1 p-2 rounded-l-md text-sm">Two-Way (A ≠ B)</button>
+                                <button data-value="One-Way" class="toggle-btn flex-1 p-2 rounded-r-md text-sm">One-Way (A > B)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6 bg-white p-6 rounded-lg border">
+                         <h3 class="text-lg font-semibold border-b pb-2">Sample Size</h3>
+                        <div>
+                            <label for="baseline-rate" class="block text-sm font-medium text-gray-700">Baseline Conversion Rate (%)</label>
+                            <p class="text-xs text-gray-500 mb-2">The current conversion rate of your control group.</p>
+                            <input type="number" id="baseline-rate" class="form-input w-full p-2 border rounded-md" placeholder="e.g., 20">
+                        </div>
+                        <div>
+                            <label for="mde" class="block text-sm font-medium text-gray-700">Minimum Detectable Effect (MDE) (%)</label>
+                            <p class="text-xs text-gray-500 mb-2">The smallest relative improvement you want to be able to detect.</p>
+                            <input type="number" id="mde" class="form-input w-full p-2 border rounded-md" placeholder="e.g., 10">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p class="text-sm text-gray-600">Estimated Sample Size Per Variation:</p>
+                            <p id="sample-size-result" class="text-2xl font-bold text-gray-800">--</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 bg-white p-6 rounded-lg border">
+                    <h3 class="text-lg font-semibold border-b pb-2 mb-4">Variations</h3>
+                    <p class="text-gray-600 mb-4">Describe the control group and each new variation you plan to test. Be specific about what is changing between them.</p>
+                    <div id="variations-container" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Control Group (A)</label>
+                            <input type="text" class="form-input w-full mt-1 p-2 border rounded-md" placeholder="Describe the baseline experience">
+                        </div>
+                    </div>
+                    <button id="add-variant-btn" class="mt-4 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700">+ Add Variant</button>
+                </div>
+            </div>
+
+            <div id="execution" class="page-content hidden">
+                <h2 class="text-3xl font-bold mb-2">Execution Plan</h2>
+                <p class="text-gray-600 mb-8">Outline the practical details of how you will run the experiment. This includes the tools you'll use, how you'll split your audience, and for how long the test will run.</p>
+                <div class="space-y-6">
+                    <div>
+                        <label for="exec-platform" class="block text-sm font-medium text-gray-700 mb-1">Platform/Tool Used</label>
+                        <input type="text" id="exec-platform" class="form-input w-full p-2 border rounded-md" placeholder="e.g., Mailchimp, Google Optimize">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="exec-traffic" class="block text-sm font-medium text-gray-700 mb-1">Traffic Allocation</label>
+                            <input type="text" id="exec-traffic" class="form-input w-full p-2 border rounded-md" placeholder="e.g., 50% Control, 50% Variant">
+                        </div>
+                        <div>
+                            <label for="exec-duration" class="block text-sm font-medium text-gray-700 mb-1">Expected Duration</label>
+                            <input type="text" id="exec-duration" class="form-input w-full p-2 border rounded-md" placeholder="e.g., 2 weeks">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analysis" class="page-content hidden">
+                <h2 class="text-3xl font-bold mb-2">Analysis Plan</h2>
+                 <p class="text-gray-600 mb-8">Specify how you will analyze the data once the experiment is complete. This ensures that your method for determining a winner is defined before you see the results.</p>
+                <div class="space-y-6">
+                     <div>
+                        <label for="analysis-tests" class="block text-sm font-medium text-gray-700 mb-1">Statistical Tests to Be Used</label>
+                        <p class="text-xs text-gray-500 mb-2">Select the primary statistical test you plan to use for your analysis.</p>
+                        <div class="flex flex-wrap gap-4 mt-2" id="statistical-test-radios">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="analysis_test" value="Chi-squared test" class="form-radio text-gray-600" checked>
+                                <span class="ml-2 text-gray-700">Chi-squared test (for proportions)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="analysis_test" value="t-test" class="form-radio text-gray-600">
+                                <span class="ml-2 text-gray-700">t-test (for means)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="analysis_test" value="Other" class="form-radio text-gray-600">
+                                <span class="ml-2 text-gray-700">Other:</span>
+                                <input type="text" id="other-analysis-test" class="form-input ml-2 p-1 border rounded-md text-sm" placeholder="Specify test">
+                            </label>
+                        </div>
+                    </div>
+                     <div>
+                        <label for="analysis-data" class="block text-sm font-medium text-gray-700 mb-1">Data Collection Method</label>
+                        <input type="text" id="analysis-data" class="form-input w-full p-2 border rounded-md" placeholder="e.g., Email platform analytics, Google Analytics">
+                    </div>
+                </div>
+            </div>
+
+            <div id="results" class="page-content hidden">
+                <h2 class="text-3xl font-bold mb-2">Results & Visualization</h2>
+                <p class="text-gray-600 mb-8">Enter the final data from your experiment here. The chart will update in real-time to provide a clear visual comparison of how each variation performed.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-4 bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Enter Results Data</h3>
+                        <div id="results-input-container">
+                            <div class="grid grid-cols-3 gap-4 items-end mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Variation</label>
+                                <label class="block text-sm font-medium text-gray-700">Initial Comms</label>
+                                <label class="block text-sm font-medium text-gray-700">Delivered Comms</label>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <p class="font-medium">Control (A)</p>
+                                <input type="number" data-group="control" data-type="users" class="results-input form-input w-full p-2 border rounded-md" placeholder="5000">
+                                <input type="number" data-group="control" data-type="conversions" class="results-input form-input w-full p-2 border rounded-md" placeholder="1000">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 items-center mt-2">
+                                <p class="font-medium">Variant (B)</p>
+                                <input type="number" data-group="variant" data-type="users" class="results-input form-input w-full p-2 border rounded-md" placeholder="5000">
+                                <input type="number" data-group="variant" data-type="conversions" class="results-input form-input w-full p-2 border rounded-md" placeholder="1100">
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg border">
+                            <h3 class="text-lg font-semibold border-b pb-2 mb-4">Statistical Significance Check</h3>
+                            <div>
+                                <label for="analysis-p-value" class="block text-sm font-medium text-gray-700 mb-1">P-value (Calculated Automatically)</label>
+                                <p class="text-xs text-gray-500 mb-2">This value is automatically calculated for a Chi-squared test from the results data.</p>
+                                <input type="number" step="0.0001" id="analysis-p-value" class="form-input w-full p-2 border rounded-md" placeholder="Calculated automatically..." readonly>
+                            </div>
+                            <div id="analysis-significance-msg" class="mt-4 p-3 rounded-md text-sm text-center font-medium"></div>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg border">
+                        <h3 class="text-lg font-semibold border-b pb-2 mb-4">Delivery Rate Comparison</h3>
+                        <div class="chart-container">
+                            <canvas id="resultsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="export" class="page-content hidden">
+                 <h2 class="text-3xl font-bold mb-2">Export Documentation</h2>
+                 <p class="text-gray-600 mb-8">Click the button below to generate a complete Markdown document based on your inputs. You can copy and paste this into your own knowledge base or reports.</p>
+                 <button id="generate-doc-btn" class="w-full md:w-auto px-6 py-3 bg-gray-800 text-white font-semibold rounded-md hover:bg-gray-700">Generate Documentation</button>
+                 <div class="mt-6">
+                    <label for="export-output" class="block text-sm font-medium text-gray-700 mb-1">Generated Markdown</label>
+                    <textarea id="export-output" rows="20" class="form-textarea w-full p-3 border rounded-md bg-gray-50 font-mono text-sm" readonly placeholder="Your generated document will appear here..."></textarea>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const navLinks = document.querySelectorAll('#main-nav a');
+    const pages = document.querySelectorAll('.page-content');
+    const confidenceSlider = document.getElementById('confidence-level');
+    const confidenceVal = document.getElementById('confidence-val');
+    const powerSlider = document.getElementById('statistical-power');
+    const powerVal = document.getElementById('power-val');
+    const sampleSizeInputs = [document.getElementById('baseline-rate'), document.getElementById('mde')];
+    const sampleSizeResult = document.getElementById('sample-size-result');
+    const addVariantBtn = document.getElementById('add-variant-btn');
+    const variationsContainer = document.getElementById('variations-container');
+    const testTypeToggle = document.getElementById('test-type-toggle');
+    const resultsInputs = document.querySelectorAll('.results-input');
+    const generateDocBtn = document.getElementById('generate-doc-btn');
+    const exportOutput = document.getElementById('export-output');
+    
+    const analysisPValueInput = document.getElementById('analysis-p-value');
+    const analysisSignificanceMsg = document.getElementById('analysis-significance-msg');
+    const statisticalTestRadios = document.querySelectorAll('input[name="analysis_test"]');
+    const otherAnalysisTestInput = document.getElementById('other-analysis-test');
+
+    let chart;
+    let variantCount = 1;
+    let experimentData = {
+        testType: 'Two-Way',
+        analysisTest: 'Chi-squared test' // Default to Chi-squared
+    };
+
+    function navigate(e) {
+        e.preventDefault();
+        const targetId = e.currentTarget.getAttribute('href');
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === targetId) {
+                link.classList.add('active');
+            }
+        });
+
+        pages.forEach(page => {
+            page.classList.add('hidden');
+            if ('#' + page.id === targetId) {
+                page.classList.remove('hidden');
+                // Ensure chart and significance are updated when Results tab is navigated to
+                if (page.id === 'results') {
+                    createOrUpdateChart();
+                }
+            }
+        });
+    }
+
+    function updateSliderValue(slider, display) {
+        display.textContent = `${slider.value}%`;
+    }
+
+    function calculateSampleSize() {
+        const baseline = parseFloat(document.getElementById('baseline-rate').value);
+        const mde = parseFloat(document.getElementById('mde').value);
+        if (isNaN(baseline) || isNaN(mde) || mde === 0) {
+            sampleSizeResult.textContent = '--';
+            return;
+        }
+        const p1 = baseline / 100;
+        const p2 = p1 * (1 + (mde / 100));
+        if (p2 > 1) p2 = 1;
+        const zAlpha = 1.96;
+        const zBeta = 0.84;
+        const n = ((zAlpha * Math.sqrt(2 * p1 * (1 - p1))) + (zBeta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))))**2 / (p1 - p2)**2;
+        sampleSizeResult.textContent = Math.ceil(n).toLocaleString();
+    }
+    
+    function addVariant() {
+        variantCount++;
+        const variantChar = String.fromCharCode(65 + variantCount);
+        const newVariantDiv = document.createElement('div');
+        newVariantDiv.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700">Variant (${variantChar})</label>
+            <input type="text" class="form-input w-full mt-1 p-2 border rounded-md" placeholder="Describe variant ${variantChar}">
+        `;
+        variationsContainer.appendChild(newVariantDiv);
+    }
+    
+    function updateTestType(e) {
+        const selectedBtn = e.target.closest('button');
+        if (!selectedBtn) return;
+        
+        testTypeToggle.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        selectedBtn.classList.add('active');
+        experimentData.testType = selectedBtn.dataset.value;
+    }
+    
+    // Approximation for the complementary error function (erfc) for x >= 0
+    // This is used for calculating p-value from chi-squared statistic for df=1.
+    function erfcApprox(x) {
+        const z = Math.abs(x);
+        const t = 1.0 / (1.0 + 0.5 * z);
+        const ans = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628807 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+        return x >= 0 ? ans : 2.0 - ans; // erfc(-x) = 2 - erfc(x)
+    }
+
+    // Calculates the p-value for a Chi-squared test (2x2 contingency table)
+    function calculateChiSquaredPValue(o11, o12, o21, o22) {
+        // o11: Group 1 Successes (Control Delivered)
+        // o12: Group 1 Failures (Control Undelivered)
+        // o21: Group 2 Successes (Variant Delivered)
+        // o22: Group 2 Failures (Variant Undelivered)
+
+        // Ensure inputs are numbers
+        o11 = Number(o11);
+        o12 = Number(o12);
+        o21 = Number(o21);
+        o22 = Number(o22);
+
+        // Sums
+        const R1 = o11 + o12; // Row 1 Total (Control Total)
+        const R2 = o21 + o22; // Row 2 Total (Variant Total)
+        const C1 = o11 + o21; // Col 1 Total (Delivered Total)
+        const C2 = o12 + o22; // Col 2 Total (Undelivered Total)
+        const N = R1 + R2;    // Grand Total
+
+        // Check for zero totals to prevent division by zero in expected calculations
+        if (N === 0 || R1 === 0 || R2 === 0 || C1 === 0 || C2 === 0) {
+            return NaN; // Cannot calculate with zero totals
+        }
+
+        // Expected Frequencies under Null Hypothesis
+        const e11 = (R1 * C1) / N;
+        const e12 = (R1 * C2) / N;
+        const e21 = (R2 * C1) / N;
+        const e22 = (R2 * C2) / N;
+
+        // Warning for small expected values (Chi-squared assumption)
+        if (e11 < 5 || e12 < 5 || e21 < 5 || e22 < 5) {
+            return 'small-expected'; // Special value to indicate unreliable results
+        }
+
+        // Calculate Chi-squared statistic
+        const chiSquared =
+            Math.pow((o11 - e11), 2) / e11 +
+            Math.pow((o12 - e12), 2) / e12 +
+            Math.pow((o21 - e21), 2) / e21 +
+            Math.pow((o22 - e22), 2) / e22;
+
+        // Degrees of Freedom for a 2x2 table is 1
+        // P-value for Chi-squared with 1 degree of freedom: erfc(sqrt(chi_sq / 2))
+        const pValue = erfcApprox(Math.sqrt(chiSquared / 2));
+
+        return pValue;
+    }
+
+    function createOrUpdateChart() {
+        const controlInitialComms = parseFloat(document.querySelector('[data-group="control"][data-type="users"]').value) || 0;
+        const controlDeliveredComms = parseFloat(document.querySelector('[data-group="control"][data-type="conversions"]').value) || 0;
+        const variantInitialComms = parseFloat(document.querySelector('[data-group="variant"][data-type="users"]').value) || 0;
+        const variantDeliveredComms = parseFloat(document.querySelector('[data-group="variant"][data-type="conversions"]').value) || 0;
+
+        const controlUndeliveredComms = controlInitialComms - controlDeliveredComms;
+        const variantUndeliveredComms = variantInitialComms - variantDeliveredComms;
+
+        // Calculate p-value
+        let calculatedPValue = calculateChiSquaredPValue(
+            controlDeliveredComms, controlUndeliveredComms,
+            variantDeliveredComms, variantUndeliveredComms
+        );
+
+        if (calculatedPValue === 'small-expected') {
+            analysisPValueInput.value = '';
+            analysisPValueInput.placeholder = 'N/A (Small Expected Freq.)';
+            analysisSignificanceMsg.textContent = 'Warning: Chi-squared might be unreliable due to small expected frequencies (< 5). Consider Fisher\'s Exact Test.';
+            analysisSignificanceMsg.className = 'mt-4 p-3 rounded-md text-sm text-center font-medium bg-yellow-100 text-yellow-700';
+        } else if (isNaN(calculatedPValue)) {
+            analysisPValueInput.value = '';
+            analysisPValueInput.placeholder = 'N/A (Insufficient Data)';
+            analysisSignificanceMsg.textContent = 'Cannot calculate significance with current data. Please enter valid numbers for Initial and Delivered Comms.';
+            analysisSignificanceMsg.className = 'mt-4 p-3 rounded-md text-sm text-center font-medium bg-gray-100 text-gray-700';
+        }
+        else {
+            analysisPValueInput.value = calculatedPValue.toFixed(4);
+            updateAnalysisSignificance();
+        }
+
+        const controlRate = controlInitialComms > 0 ? (controlDeliveredComms / controlInitialComms) * 100 : 0;
+        const variantRate = variantInitialComms > 0 ? (variantDeliveredComms / variantInitialComms) * 100 : 0;
+
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        const chartData = {
+            labels: ['Control (A)', 'Variant (B)'],
+            datasets: [{
+                label: 'Delivery Rate (%)',
+                data: [controlRate.toFixed(2), variantRate.toFixed(2)],
+                backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(255, 99, 132, 0.6)'],
+                borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                borderWidth: 1
+            }]
+        };
+
+        if (chart) {
+            chart.data = chartData;
+            chart.update();
+        } else {
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, suggestedMax: Math.max(controlRate, variantRate) * 1.1 || 100 } },
+                    plugins: { legend: { display: false }, title: { display: true, text: 'Performance Comparison' } }
+                }
+            });
+        }
+    }
+
+    function updateAnalysisSignificance() {
+        const pValue = parseFloat(analysisPValueInput.value);
+        const keyMetric = document.getElementById('exp-metric').value || 'your key metric';
+
+        if (isNaN(pValue) || analysisPValueInput.value === null || analysisPValueInput.value === '') {
+            analysisSignificanceMsg.textContent = 'Enter the P-value to determine statistical significance.';
+            analysisSignificanceMsg.className = 'mt-4 p-3 rounded-md text-sm text-center font-medium bg-gray-100 text-gray-700';
+            return;
+        }
+
+        if (pValue < 0.05) {
+            analysisSignificanceMsg.textContent = `Results for ${keyMetric} are Statistically Significant (p = ${pValue})`;
+            analysisSignificanceMsg.className = 'mt-4 p-3 rounded-md text-sm text-center font-medium bg-green-100 text-green-700';
+        } else {
+            analysisSignificanceMsg.textContent = `Results for ${keyMetric} are NOT Statistically Significant (p = ${pValue})`;
+            analysisSignificanceMsg.className = 'mt-4 p-3 rounded-md text-sm text-center font-medium bg-red-100 text-red-700';
+        }
+    }
+
+    function generateDocumentation() {
+        const getVal = (id) => document.getElementById(id).value || `[${document.getElementById(id).placeholder || 'Not specified'}]`;
+
+        const variantsText = Array.from(variationsContainer.children).map((div, i) => {
+            const label = div.querySelector('label').textContent;
+            const inputVal = div.querySelector('input').value;
+            return `* **${label}:** ${inputVal || '[Not specified]'}`;
+        }).join('\n');
+        
+        const resultsControlUsers = document.querySelector('[data-group="control"][data-type="users"]').value;
+        const resultsControlConv = document.querySelector('[data-group="control"][data-type="conversions"]').value;
+        const resultsVariantUsers = document.querySelector('[data-group="variant"][data-type="users"]').value;
+        const resultsVariantConv = document.querySelector('[data-group="variant"][data-type="conversions"]').value;
+        
+        const controlRate = resultsControlUsers > 0 ? ((resultsControlConv / resultsControlUsers) * 100).toFixed(2) : '0.00';
+        const variantRate = resultsVariantUsers > 0 ? ((resultsVariantConv / resultsVariantUsers) * 100).toFixed(2) : '0.00';
+
+        // Get selected statistical test
+        let selectedAnalysisTest = '';
+        const selectedRadio = document.querySelector('input[name="analysis_test"]:checked');
+        if (selectedRadio) {
+            selectedAnalysisTest = selectedRadio.value;
+            if (selectedAnalysisTest === 'Other') {
+                selectedAnalysisTest += `: ${otherAnalysisTestInput.value || '[Not specified]'}`;
+            }
+        } else {
+            selectedAnalysisTest = '[Not specified]';
+        }
+
+
+        const analysisPValue = analysisPValueInput.value || '[Not calculated/specified]';
+        const analysisSignificanceMessage = document.getElementById('analysis-significance-msg').textContent || '[Not determined]';
+        
+        const output = `
+# Experiment Documentation: ${getVal('exp-title')}
+
+---
+
+## 1. Experiment Overview
+* **Experiment Title:** ${getVal('exp-title')}
+* **Date Initiated:** ${getVal('exp-date')}
+* **Experiment Owner:** ${getVal('exp-owner')}
+* **Goal/Objective:** ${getVal('exp-goal')}
+* **Key Metric(s):** ${getVal('exp-metric')}
+
+---
+
+## 2. Hypothesis Formulation
+* **Research Question:** ${getVal('hypo-question')}
+* **Alternative Hypothesis ($H_1$):** ${getVal('hypo-alt')}
+* **Null Hypothesis ($H_0$):** ${getVal('hypo-null')}
+
+---
+
+## 3. Experiment Design
+* **Confidence Level:** ${confidenceVal.textContent}
+* **Statistical Power:** ${powerVal.textContent}
+* **Test Type:** ${experimentData.testType}
+* **Baseline Conversion Rate:** ${getVal('baseline-rate')}%
+* **Minimum Detectable Effect (MDE):** ${getVal('mde')}% (relative)
+* **Estimated Sample Size per Variation:** ${sampleSizeResult.textContent}
+* **Variations:**
+${variantsText}
+
+---
+
+## 4. Execution Plan
+* **Platform/Tool Used:** ${getVal('exec-platform')}
+* **Traffic Allocation:** ${getVal('exec-traffic')}
+* **Expected Duration:** ${getVal('exec-duration')}
+
+---
+
+## 5. Analysis Plan
+* **Statistical Tests to Be Used:** ${selectedAnalysisTest}
+* **Data Collection Method:** ${getVal('analysis-data')}
+
+---
+
+## 6. Results
+* **Control Group (A):**
+  * **Initial Comms:** ${resultsControlUsers || '[Not specified]'}
+  * **Delivered Comms:** ${resultsControlConv || '[Not specified]'}
+  * **Delivery Rate:** ${controlRate}%
+* **Variant Group (B):**
+  * **Initial Comms:** ${resultsVariantUsers || '[Not specified]'}
+  * **Delivered Comms:** ${resultsVariantConv || '[Not specified]'}
+  * **Delivery Rate:** ${variantRate}%
+* **Observed P-value:** ${analysisPValue}
+* **Significance:** ${analysisSignificanceMessage}
+
+---
+`;
+        exportOutput.value = output.trim();
+    }
+
+
+    navLinks.forEach(link => link.addEventListener('click', navigate));
+    confidenceSlider.addEventListener('input', () => updateSliderValue(confidenceSlider, confidenceVal));
+    powerSlider.addEventListener('input', () => updateSliderValue(powerSlider, powerVal));
+    sampleSizeInputs.forEach(input => input.addEventListener('input', calculateSampleSize));
+    addVariantBtn.addEventListener('click', addVariant);
+    testTypeToggle.addEventListener('click', updateTestType);
+    resultsInputs.forEach(input => input.addEventListener('input', createOrUpdateChart));
+    generateDocBtn.addEventListener('click', generateDocumentation);
+
+    // Event listener for statistical test radio buttons
+    statisticalTestRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                otherAnalysisTestInput.style.display = 'inline-block';
+                otherAnalysisTestInput.focus();
+            } else {
+                otherAnalysisTestInput.style.display = 'none';
+                otherAnalysisTestInput.value = ''; // Clear other text if another option is selected
+            }
+        });
+    });
+    // Event listener for 'Other' text input to capture its value
+    otherAnalysisTestInput.addEventListener('input', function() {
+        // This will be captured in generateDocumentation
+    });
+
+
+    document.getElementById('exp-date').valueAsDate = new Date();
+    createOrUpdateChart();
+});
+</script>
+</body>
+</html>
